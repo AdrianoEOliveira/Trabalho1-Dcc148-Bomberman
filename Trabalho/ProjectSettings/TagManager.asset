@@ -9,6 +9,10 @@ TagManager:
   - Destrutiveis
   - bomb
   - explosion
+  - Item
+  - 2 player
+  - 3 player
+  - 4player
   layers:
   - Default
   - TransparentFX

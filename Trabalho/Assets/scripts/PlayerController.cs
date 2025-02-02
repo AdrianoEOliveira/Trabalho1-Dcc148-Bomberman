@@ -66,18 +66,22 @@ public class PlayerController : MonoBehaviour
             if (Keyboard.current.upArrowKey.wasPressedThisFrame)
             {
                 moveInput.y = 1;
+                moveInput.x = 0;
             }
             else if (Keyboard.current.downArrowKey.isPressed)
             {
                 moveInput.y = -1;
+                moveInput.x = 0;
             }
             if (Keyboard.current.leftArrowKey.isPressed)
             {
                 moveInput.x = -1;
+                moveInput.y = 0;
             }
             else if (Keyboard.current.rightArrowKey.isPressed)
             {
                 moveInput.x = 1;
+                moveInput.y = 0;
             }
             if (moveInput != Vector2.zero)
             {
