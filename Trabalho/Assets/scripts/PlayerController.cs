@@ -7,6 +7,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float speed = 3f; // Velocidade do jogador
     private Vector2 moveInput;
 
+    private Vector3 targetPosition; // Posição de destino do jogador
+
     public Tilemap tilemapPiso;
     public Tilemap tilemapParedes;
     public Tilemap tilemapDestrutiveis;
@@ -21,8 +23,8 @@ public class PlayerController : MonoBehaviour
     private SpriteRenderer spriteRenderer;
 
     private int currentSpriteIndex = 0;
-    private float spriteChangeRate = 0.2f; // Tempo para trocar o sprite da animação
-    private float spriteTimer = 0f;
+
+    private bool isMoving = false;
 
     private void Awake()
     {
@@ -32,36 +34,49 @@ public class PlayerController : MonoBehaviour
 
         spriteRenderer = GetComponent<SpriteRenderer>();
         bombPool = new ObjectPool(bombPrefab, 3);
+        // Garante que o jogador começa no centro da célula
+        Vector3Int tilePosition = tilemapPiso.WorldToCell(transform.position);
+        Vector3 tileCenterPosition = tilemapPiso.CellToWorld(tilePosition) + tilemapPiso.cellSize / 2f;
+
+        transform.position = tileCenterPosition;
     }
+
+
 
     private void Update()
     {
-        moveInput = Vector2.zero;
+        if (!isMoving)
+        {
 
-        if (Keyboard.current.upArrowKey.isPressed)
-        {
-            moveInput.y = 1;
-            AnimateSprite(UpSprites);
-        }
-        else if (Keyboard.current.downArrowKey.isPressed)
-        {
-            moveInput.y = -1;
-            AnimateSprite(DownSprites);
-        }
-        if (Keyboard.current.leftArrowKey.isPressed)
-        {
-            moveInput.x = -1;
-            AnimateSprite(LeftSprites);
-        }
-        else if (Keyboard.current.rightArrowKey.isPressed)
-        {
-            moveInput.x = 1;
-            AnimateSprite(RightSprites);
-        }
+            if (Keyboard.current.upArrowKey.wasPressedThisFrame)
+            {
+                moveInput.y = 1;
+            }
+            else if (Keyboard.current.downArrowKey.isPressed)
+            {
+                moveInput.y = -1;
+            }
+            if (Keyboard.current.leftArrowKey.isPressed)
+            {
+                moveInput.x = -1;
+            }
+            else if (Keyboard.current.rightArrowKey.isPressed)
+            {
+                moveInput.x = 1;
+            }
+            if (moveInput != Vector2.zero)
+            {
+                // Converte a posição atual para a célula do tilemap
+                Vector3Int nextCell = tilemapPiso.WorldToCell(transform.position) + GetCellDirection(moveInput);
+                Vector3 nextPosition = tilemapPiso.GetCellCenterWorld(nextCell);
 
-        moveInput = moveInput.normalized; // Mantém a velocidade constante em diagonais
-
-        MovePlayer(); // Atualiza a posição do jogador manualmente
+                if (!IsObstacle(nextPosition))
+                {
+                    targetPosition = nextPosition;
+                    StartCoroutine(MoveToTarget());
+                }
+            }
+        }
 
         if (Keyboard.current.spaceKey.wasPressedThisFrame)
         {
@@ -69,46 +84,88 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void MovePlayer()
-    {
-        // Calcula a nova posição com base no movimento
-        Vector3 newPosition = transform.position + (Vector3)moveInput * speed * Time.deltaTime;
+private System.Collections.IEnumerator MoveToTarget()
+{
+    isMoving = true;
 
-        // Checa se a nova posição não vai colidir com obstáculos (paredes ou tiles destrutíveis)
-        if (!IsObstacle(newPosition))
+    // Calcular a distância total do movimento
+    float totalDistance = (transform.position - targetPosition).magnitude;
+    // Calcular o tempo necessário para mover até o target
+    float moveDuration = totalDistance / speed;
+    // Definir o número de quadros da animação (4 quadros)
+    int totalFrames = 4;
+
+    // Calcular o tempo por quadro da animação
+    float timePerFrame = moveDuration / totalFrames;
+
+    // Inicializar o contador de quadros da animação
+    float frameTimer = 0f;
+
+    while ((transform.position - targetPosition).sqrMagnitude > 0.01f)
+    {
+        // Atualiza o sprite conforme o eixo de movimento
+        if (moveInput.y == 1)
         {
-            transform.position = newPosition; // Se não houver obstáculos, o jogador pode se mover
+            AnimateSprite(UpSprites);
         }
+        else if (moveInput.y == -1)
+        {
+            AnimateSprite(DownSprites);
+        }
+        else if (moveInput.x == -1)
+        {
+            AnimateSprite(LeftSprites);
+        }
+        else if (moveInput.x == 1)
+        {
+            AnimateSprite(RightSprites);
+        }
+
+        // Atualiza o contador de tempo de animação
+        frameTimer += Time.deltaTime;
+
+        // Verifica se é hora de trocar o quadro de animação
+        if (frameTimer >= timePerFrame)
+        {
+            currentSpriteIndex = (currentSpriteIndex + 1) % 4; // Atualiza o índice da animação para o próximo quadro
+            frameTimer = 0f; // Reseta o timer para o próximo quadro
+        }
+
+        // Move o jogador para a próxima posição
+        transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
+
+        yield return null;
     }
+
+    transform.position = targetPosition;
+    isMoving = false;
+    moveInput = Vector2.zero;
+}
+
+private void AnimateSprite(Sprite[] animationSprites)
+{
+    // Atualiza o sprite com base no índice atual
+    spriteRenderer.sprite = animationSprites[currentSpriteIndex];
+}
+
+    private Vector3Int GetCellDirection(Vector2 moveDirection)
+    {
+        return new Vector3Int((int)moveDirection.x, (int)moveDirection.y, 0);
+    }
+
     private bool IsObstacle(Vector2 targetPosition)
     {
-        // Checa se a posição de destino tem um tile sólido, seja parede ou tile destrutível
         Vector3Int targetTilePosition = tilemapParedes.WorldToCell(targetPosition);
         if (tilemapParedes.HasTile(targetTilePosition))
-        {
-            return true; // O jogador bateu numa parede
-        }
+            return true;
 
         Vector3Int targetDestrutivelTilePosition = tilemapDestrutiveis.WorldToCell(targetPosition);
         if (tilemapDestrutiveis.HasTile(targetDestrutivelTilePosition))
-        {
-            return true; // O jogador bateu em um tile destrutível
-        }
+            return true;
 
-        return false; // Se não houver nenhum obstáculo
+        return false;
     }
 
-    private void AnimateSprite(Sprite[] animationSprites)
-    {
-        spriteTimer += Time.deltaTime;
-
-        if (spriteTimer >= spriteChangeRate)
-        {
-            spriteTimer = 0f;
-            currentSpriteIndex = (currentSpriteIndex + 1) % animationSprites.Length;
-            spriteRenderer.sprite = animationSprites[currentSpriteIndex];
-        }
-    }
 
     void Bomb()
     {
