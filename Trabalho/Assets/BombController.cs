@@ -5,7 +5,6 @@ using UnityEngine.Tilemaps;
 public class BombController : MonoBehaviour
 {
     public float fuseTime = 3f; // Tempo até a explosão (em segundos)
-    private ObjectPool objectPool; // Referência ao ObjectPooler
     [SerializeField] public GameObject explosionPrefab; // Prefab da explosão
 
     // Referências aos três Tilemaps
@@ -18,37 +17,58 @@ public class BombController : MonoBehaviour
     private SpriteRenderer spriteRenderer; // O SpriteRenderer da bomba
 
     private bool isExploded = false; // Verifica se a bomba já explodiu
+    private bool isBombUsed = false; // Controla se a bomba já foi usada
+
+    private Vector3 worldPosition; // Posição da bomba no mundo
     private Vector3Int bombPosition;
 
     void Start()
     {
-        GameObject tilemapObj = GameObject.FindWithTag("Piso"); // Busca o GameObject com a Tag
+        InitializeBomb();
+    }
+    private void InitializeBomb()
+    {
+        isExploded = false; // A bomba ainda não explodiu
+        GameObject tilemapObj = GameObject.FindWithTag("Piso");
         if (tilemapObj != null)
         {
-            tilemapPiso = tilemapObj.GetComponent<Tilemap>(); // Obtém o componente Tilemap
+            tilemapPiso = tilemapObj.GetComponent<Tilemap>();
         }
-        GameObject tilemapObj2 = GameObject.FindWithTag("Parede"); // Busca o GameObject com a Tag
+        GameObject tilemapObj2 = GameObject.FindWithTag("Parede");
         if (tilemapObj2 != null)
         {
-            tilemapParedes = tilemapObj2.GetComponent<Tilemap>(); // Obtém o componente Tilemap
+            tilemapParedes = tilemapObj2.GetComponent<Tilemap>();
         }
-        GameObject tilemapObj3 = GameObject.FindWithTag("Destrutiveis"); // Busca o GameObject com a Tag
+        GameObject tilemapObj3 = GameObject.FindWithTag("Destrutiveis");
         if (tilemapObj3 != null)
         {
-            tilemapDestrutiveis = tilemapObj3.GetComponent<Tilemap>(); // Obtém o componente Tilemap
+            tilemapDestrutiveis = tilemapObj3.GetComponent<Tilemap>();
         }
         // Pega o SpriteRenderer
-        objectPool = new ObjectPool(explosionPrefab, 1);
+
+
         spriteRenderer = GetComponent<SpriteRenderer>();
 
         // Pega a posição da bomba no Tilemap
         bombPosition = tilemapDestrutiveis.WorldToCell(transform.position);
 
-        // Inicia a contagem regressiva para a explosão
-        StartCoroutine(ExplosionCountdown());
+        // Reseta o estado da bomba
+        isExploded = false;
+        spriteRenderer.sprite = bombSprites[0]; // Coloca o primeiro sprite da animação da bomba
+        gameObject.SetActive(true); // Ativa a bomb
+        StartCoroutine(ExplosionCountdown()); // Inicia a contagem regressiva
+        StartCoroutine(AnimateBomb()); // Inicia a animação da bomba
+    }
 
-        // Inicia a animação da bomba
-        StartCoroutine(AnimateBomb());
+    public void ResetBomb()
+    {
+        if (!isBombUsed)
+        {
+            // Se for a primeira vez, não faz reset, apenas retorna
+            isBombUsed = true; // Marca que a bomba foi usada pela primeira vez
+            return;
+        }
+        InitializeBomb(); // Chama o método que faz o comportamento de "Start()" novamente
     }
 
     // Função de contagem regressiva para a explosão
@@ -74,7 +94,6 @@ public class BombController : MonoBehaviour
         // Inicia a animação da explosão
         StartCoroutine(AnimateExplosion());
 
-        GameObject explosion = objectPool.GetFromPool();
         Vector3 worldPosition = transform.position;
 
         // Converte a posição para a célula do Tilemap
@@ -84,8 +103,8 @@ public class BombController : MonoBehaviour
         Vector3 tileCenterPosition = tilemapPiso.CellToWorld(tilePosition) + tilemapPiso.cellSize / 2f;
 
         // Posiciona a bomba
-        explosion.transform.position = tileCenterPosition;
-        explosion.SetActive(true);
+        Instantiate(explosionPrefab, tileCenterPosition, Quaternion.identity);
+
 
         // Desativa a bomba após a animação de explosão
         gameObject.SetActive(false);

@@ -7,7 +7,7 @@ public class ExplosionController : MonoBehaviour
     public Sprite[] explosionSprites; // Array de Sprites da explosão
     public float duration = 3f; // Duração total da animação
 
-    private void OnEnable()
+    private void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>(); // Pega o SpriteRenderer do jogador
         StartCoroutine(AnimateExplosion());
@@ -26,5 +26,6 @@ public class ExplosionController : MonoBehaviour
 
         // Quando a animação termina, desativa o objeto
         gameObject.SetActive(false);
+        Destroy(gameObject);
     }
 }

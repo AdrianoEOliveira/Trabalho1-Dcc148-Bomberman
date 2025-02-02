@@ -15,7 +15,7 @@ public class ObjectPool
         this.poolSize = poolSize;
         queue = new Queue<GameObject>();
 
-        for(int i = 0; i < this.poolSize; i++)
+        for (int i = 0; i < this.poolSize; i++)
         {
             GameObject obj = Object.Instantiate(prefab);
             obj.SetActive(false);
@@ -26,7 +26,7 @@ public class ObjectPool
     public GameObject GetFromPool()
     {
         GameObject obj = queue.Peek();
-        if(obj.activeSelf)
+        if (obj.activeSelf)
             return null;
 
         queue.Dequeue();
