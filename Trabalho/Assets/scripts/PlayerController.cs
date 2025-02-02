@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
+using System.Collections;
 
 public class PlayerController : MonoBehaviour
 {
@@ -24,11 +25,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Sprite[] LeftSprites;
     [SerializeField] private Sprite[] RightSprites;
     [SerializeField] private Sprite[] DownSprites;
+    [SerializeField] private Sprite[] deathSprites;
     private SpriteRenderer spriteRenderer;
 
     private int currentSpriteIndex = 0;
 
     private bool isMoving = false;
+
+    private bool isDead = false;
 
     private void Awake()
     {
@@ -45,11 +49,17 @@ public class PlayerController : MonoBehaviour
         transform.position = tileCenterPosition;
     }
 
+    public void SetDeath(bool death)
+    {
+        isDead = death;
+    }
+
 
 
     private void Update()
     {
         checkItemTike();
+        Death();
         if (!isMoving)
         {
 
@@ -89,69 +99,69 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-private System.Collections.IEnumerator MoveToTarget()
-{
-    isMoving = true;
-
-    // Calcular a distância total do movimento
-    float totalDistance = (transform.position - targetPosition).magnitude;
-    // Calcular o tempo necessário para mover até o target
-    float moveDuration = totalDistance / speed;
-    // Definir o número de quadros da animação (4 quadros)
-    int totalFrames = 4;
-
-    // Calcular o tempo por quadro da animação
-    float timePerFrame = moveDuration / totalFrames;
-
-    // Inicializar o contador de quadros da animação
-    float frameTimer = 0f;
-
-    while ((transform.position - targetPosition).sqrMagnitude > 0.01f)
+    private System.Collections.IEnumerator MoveToTarget()
     {
-        // Atualiza o sprite conforme o eixo de movimento
-        if (moveInput.y == 1)
+        isMoving = true;
+
+        // Calcular a distância total do movimento
+        float totalDistance = (transform.position - targetPosition).magnitude;
+        // Calcular o tempo necessário para mover até o target
+        float moveDuration = totalDistance / speed;
+        // Definir o número de quadros da animação (4 quadros)
+        int totalFrames = 4;
+
+        // Calcular o tempo por quadro da animação
+        float timePerFrame = moveDuration / totalFrames;
+
+        // Inicializar o contador de quadros da animação
+        float frameTimer = 0f;
+
+        while ((transform.position - targetPosition).sqrMagnitude > 0.01f)
         {
-            AnimateSprite(UpSprites);
-        }
-        else if (moveInput.y == -1)
-        {
-            AnimateSprite(DownSprites);
-        }
-        else if (moveInput.x == -1)
-        {
-            AnimateSprite(LeftSprites);
-        }
-        else if (moveInput.x == 1)
-        {
-            AnimateSprite(RightSprites);
+            // Atualiza o sprite conforme o eixo de movimento
+            if (moveInput.y == 1)
+            {
+                AnimateSprite(UpSprites);
+            }
+            else if (moveInput.y == -1)
+            {
+                AnimateSprite(DownSprites);
+            }
+            else if (moveInput.x == -1)
+            {
+                AnimateSprite(LeftSprites);
+            }
+            else if (moveInput.x == 1)
+            {
+                AnimateSprite(RightSprites);
+            }
+
+            // Atualiza o contador de tempo de animação
+            frameTimer += Time.deltaTime;
+
+            // Verifica se é hora de trocar o quadro de animação
+            if (frameTimer >= timePerFrame)
+            {
+                currentSpriteIndex = (currentSpriteIndex + 1) % 4; // Atualiza o índice da animação para o próximo quadro
+                frameTimer = 0f; // Reseta o timer para o próximo quadro
+            }
+
+            // Move o jogador para a próxima posição
+            transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
+
+            yield return null;
         }
 
-        // Atualiza o contador de tempo de animação
-        frameTimer += Time.deltaTime;
-
-        // Verifica se é hora de trocar o quadro de animação
-        if (frameTimer >= timePerFrame)
-        {
-            currentSpriteIndex = (currentSpriteIndex + 1) % 4; // Atualiza o índice da animação para o próximo quadro
-            frameTimer = 0f; // Reseta o timer para o próximo quadro
-        }
-
-        // Move o jogador para a próxima posição
-        transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
-
-        yield return null;
+        transform.position = targetPosition;
+        isMoving = false;
+        moveInput = Vector2.zero;
     }
 
-    transform.position = targetPosition;
-    isMoving = false;
-    moveInput = Vector2.zero;
-}
-
-private void AnimateSprite(Sprite[] animationSprites)
-{
-    // Atualiza o sprite com base no índice atual
-    spriteRenderer.sprite = animationSprites[currentSpriteIndex];
-}
+    private void AnimateSprite(Sprite[] animationSprites)
+    {
+        // Atualiza o sprite com base no índice atual
+        spriteRenderer.sprite = animationSprites[currentSpriteIndex];
+    }
 
     private Vector3Int GetCellDirection(Vector2 moveDirection)
     {
@@ -191,8 +201,29 @@ private void AnimateSprite(Sprite[] animationSprites)
         {
             tilemapItem.SetTile(playerPosition, null);
             powerUp++;
-            Debug.Log("PowerUp: " + powerUp);
             bombPool.SetPowerUp(powerUp);
         }
+    }
+
+    private  IEnumerator PlayDeathAnimation()
+    {
+        int spriteCount = deathSprites.Length;  // Total de sprites para a animação de morte
+        float spriteDuration = 0.1f;  // Ajuste o tempo entre os frames da animação
+
+        for (int i = 0; i < spriteCount; i++)
+        {
+            spriteRenderer.sprite = deathSprites[i];  // Troca o sprite para a animação
+            yield return new WaitForSeconds(spriteDuration);  // Aguarda antes de trocar
+        }
+        gameObject.SetActive(false);
+    }
+    private void Death()
+    {
+        if(isDead)
+        {
+        StartCoroutine(PlayDeathAnimation());
+        }
+
+        //gameObject.SetActive(false);
     }
 }

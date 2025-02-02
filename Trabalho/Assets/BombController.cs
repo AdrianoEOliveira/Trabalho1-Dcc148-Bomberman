@@ -6,12 +6,18 @@ using UnityEngine.Tilemaps;
 public class BombController : MonoBehaviour
 {
     public float fuseTime = 3f; // Tempo até a explosão (em segundos)
+
+    private float startTime;
     [SerializeField] public GameObject explosionPrefab; // Prefab da explosão
 
     // Referências aos três Tilemaps
     public Tilemap tilemapPiso; // Tilemap para o Piso
     public Tilemap tilemapParedes; // Tilemap para as Paredes
     public Tilemap tilemapDestrutiveis; // Tilemap para tiles Destrutíveis
+
+    public GameObject player; // Referência ao jogador
+    public AIController A1; // Referência ao AI1
+
 
     public Sprite[] bombSprites; // Array de sprites para animação da bomba (4 sprites)
     public Sprite[] explosionSprites; // Array de sprites para animação da explosão (8 sprites)
@@ -20,7 +26,7 @@ public class BombController : MonoBehaviour
     private bool isExploded = false; // Verifica se a bomba já explodiu
     private bool isBombUsed = false; // Controla se a bomba já foi usada
 
-    private int PowerUp = 1; // Verifica se a bomba é um power-up
+    public int PowerUp = 1; // Verifica se a bomba é um power-up
 
 
     private Vector3 worldPosition; // Posição da bomba no mundo
@@ -48,6 +54,7 @@ public class BombController : MonoBehaviour
     private void InitializeBomb()
     {
         isExploded = false; // A bomba ainda não explodiu
+         startTime = Time.time; // Registrar o tempo de ativação
         GameObject tilemapObj = GameObject.FindWithTag("Piso");
         if (tilemapObj != null)
         {
@@ -78,6 +85,13 @@ public class BombController : MonoBehaviour
         StartCoroutine(AnimateBomb()); // Inicia a animação da bomba
     }
 
+    public float GetRemainingTime()
+{
+    // Calcula o tempo restante baseado no tempo decorrido desde a ativação
+    float elapsedTime = Time.time - startTime;
+    return Mathf.Max(fuseTime - elapsedTime, 0f);
+}
+
 
     // Função de contagem regressiva para a explosão
     private IEnumerator ExplosionCountdown()
@@ -90,74 +104,75 @@ public class BombController : MonoBehaviour
 
     // Função para lidar com a explosão
     private void Explode()
-{
-    if (isExploded)
-        return;
+    {
+        if (isExploded)
+            return;
 
-    isExploded = true;
+        isExploded = true;
 
-    // Atualiza a posição no Tilemap de destrutíveis para garantir que a bomba está no lugar correto
-    bombPosition = tilemapDestrutiveis.WorldToCell(transform.position);
+        // Atualiza a posição no Tilemap de destrutíveis para garantir que a bomba está no lugar correto
+        bombPosition = tilemapDestrutiveis.WorldToCell(transform.position);
 
-    // Destrói tiles ao redor da bomba (incluindo o tile onde a bomba foi colocada)
-    DestruirTiles();
+        // Destrói tiles ao redor da bomba (incluindo o tile onde a bomba foi colocada)
+        DestruirTiles();
 
-    // Inicia a animação da explosão
-    StartCoroutine(AnimateExplosion());
+        // Inicia a animação da explosão
+        StartCoroutine(AnimateExplosion());
 
-    // Instancia a explosão no local
-    Vector3 worldPosition = tilemapPiso.CellToWorld(bombPosition);
-    Vector3 tileCenterPosition = worldPosition + tilemapPiso.cellSize / 2f;
+        // Instancia a explosão no local
+        Vector3 worldPosition = tilemapPiso.CellToWorld(bombPosition);
+        Vector3 tileCenterPosition = worldPosition + tilemapPiso.cellSize / 2f;
 
-    // Instancia a explosão
-    GameObject explosion = Instantiate(explosionPrefab, tileCenterPosition, Quaternion.identity);
+        // Instancia a explosão
+        GameObject explosion = Instantiate(explosionPrefab, tileCenterPosition, Quaternion.identity);
 
-    // Ajusta o tamanho da explosão de acordo com o powerUp
-    float explosionScale =  PowerUp * 1f; // Aumenta a escala da explosão conforme o powerUp
-    explosion.transform.localScale = new Vector3(explosionScale, explosionScale, 1);
+        // Ajusta o tamanho da explosão de acordo com o powerUp
+        float explosionScale = PowerUp * 1f; // Aumenta a escala da explosão conforme o powerUp
+        explosion.transform.localScale = new Vector3(explosionScale, explosionScale, 1);
+        ControleMorte();
 
-    isBombUsed = true;
+        isBombUsed = true;
 
-    // Desativa a bomba após a animação de explosão
-    gameObject.SetActive(false);
-}
+        // Desativa a bomba após a animação de explosão
+        gameObject.SetActive(false);
+    }
 
     // Função para destruir tiles ao redor da bomba
-// Função para destruir tiles ao redor da bomba com base no powerUp
-private void DestruirTiles()
-{
-    // Determina o alcance da explosão com base no powerUp
-    int alcance = PowerUp;  // O valor do powerUp aumenta o alcance
-
-    // Verifica os tiles adjacentes no alcance vertical e horizontal
-    for (int x = -alcance; x <= alcance; x++)
+    // Função para destruir tiles ao redor da bomba com base no powerUp
+    private void DestruirTiles()
     {
-        // Para a direção X (horizontal), ignora a linha do centro (onde a bomba está)
-        if (x != 0)
+        // Determina o alcance da explosão com base no powerUp
+        int alcance = PowerUp;  // O valor do powerUp aumenta o alcance
+
+        // Verifica os tiles adjacentes no alcance vertical e horizontal
+        for (int x = -alcance; x <= alcance; x++)
         {
-            Vector3Int tilePosition = bombPosition + new Vector3Int(x, 0, 0);
-            // Verifica se o tile é destrutível
-            if (tilemapDestrutiveis.HasTile(tilePosition))
+            // Para a direção X (horizontal), ignora a linha do centro (onde a bomba está)
+            if (x != 0)
             {
-                tilemapDestrutiveis.SetTile(tilePosition, null); // Remove o tile destrutível
+                Vector3Int tilePosition = bombPosition + new Vector3Int(x, 0, 0);
+                // Verifica se o tile é destrutível
+                if (tilemapDestrutiveis.HasTile(tilePosition))
+                {
+                    tilemapDestrutiveis.SetTile(tilePosition, null); // Remove o tile destrutível
+                }
+            }
+        }
+
+        for (int y = -alcance; y <= alcance; y++)
+        {
+            // Para a direção Y (vertical), ignora a coluna do centro (onde a bomba está)
+            if (y != 0)
+            {
+                Vector3Int tilePosition = bombPosition + new Vector3Int(0, y, 0);
+                // Verifica se o tile é destrutível
+                if (tilemapDestrutiveis.HasTile(tilePosition))
+                {
+                    tilemapDestrutiveis.SetTile(tilePosition, null); // Remove o tile destrutível
+                }
             }
         }
     }
-
-    for (int y = -alcance; y <= alcance; y++)
-    {
-        // Para a direção Y (vertical), ignora a coluna do centro (onde a bomba está)
-        if (y != 0)
-        {
-            Vector3Int tilePosition = bombPosition + new Vector3Int(0, y, 0);
-            // Verifica se o tile é destrutível
-            if (tilemapDestrutiveis.HasTile(tilePosition))
-            {
-                tilemapDestrutiveis.SetTile(tilePosition, null); // Remove o tile destrutível
-            }
-        }
-    }
-}
 
     // Função para animar a bomba enquanto ela espera
     private IEnumerator AnimateBomb()
@@ -187,5 +202,64 @@ private void DestruirTiles()
             spriteRenderer.sprite = explosionSprites[i]; // Altera o sprite da explosão
             yield return new WaitForSeconds(spriteDuration); // Aguarda antes de trocar o sprite
         }
+    }
+
+    private void ControleMorte()
+    {
+        // Calcula o alcance da explosão com base no PowerUp
+        int alcance = PowerUp;
+
+        // Posição da explosão no mundo
+        Vector3 explosaoPosicao = tilemapPiso.CellToWorld(bombPosition) + tilemapPiso.cellSize / 2f;
+
+        // Verifica se o jogador está dentro do raio da explosão (em X e Y)
+        if (VerificarDentroRaio(explosaoPosicao, player.transform.position, alcance))
+        {
+            MatarJogador(player);
+        }
+
+        // Verifica se o AI1 está dentro do raio da explosão (em X e Y)
+        if (VerificarDentroRaio(explosaoPosicao, A1.transform.position, alcance))
+        {
+            MatarAI(A1);
+        }
+    }
+
+    private bool VerificarDentroRaio(Vector3 explosaoPosicao, Vector3 targetPos, int alcance)
+    {
+        // Converte as posições para coordenadas de tile
+        Vector3Int explosaoTilePos = tilemapPiso.WorldToCell(explosaoPosicao);
+        Vector3Int targetTilePos = tilemapPiso.WorldToCell(targetPos);
+
+        // Verifica se o alvo está dentro do alcance em X e Y (não diagonal)
+        bool dentroRaio = Mathf.Abs(explosaoTilePos.x - targetTilePos.x) <= alcance &&
+                          Mathf.Abs(explosaoTilePos.y - targetTilePos.y) <= alcance;
+
+        // Verifica se está na diagonal
+        bool naDiagonal = Mathf.Abs(explosaoTilePos.x - targetTilePos.x) == Mathf.Abs(explosaoTilePos.y - targetTilePos.y);
+
+        // Se estiver na diagonal, retorna false para que não morra
+        if (naDiagonal)
+        {
+            return false;
+        }
+
+        return dentroRaio;
+    }
+
+    private void MatarJogador(GameObject jogador)
+    {
+        // Ação para matar o jogador, como desativá-lo ou chamar animação de morte
+        Debug.Log("Jogador morreu!");
+        player.GetComponent<PlayerController>().SetDeath(true);
+        //jogador.SetActive(false); // Desativa o jogador (ou adicione animação de morte)
+    }
+
+    private void MatarAI(AIController ai)
+    {
+        // Ação para matar o AI, como desativá-lo ou chamar animação de morte
+        Debug.Log("AI1 morreu!");
+        ai.SetDeath(true);
+        //ai.SetActive(false); // Desativa o AI (ou adicione animação de morte)
     }
 }
