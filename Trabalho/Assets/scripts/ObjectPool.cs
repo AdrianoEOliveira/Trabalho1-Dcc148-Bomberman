@@ -8,11 +8,11 @@ public class ObjectPool
 
     private Queue<GameObject> queue;
     private int poolSize;
-
+    private int powerUp =1 ;
     public ObjectPool(GameObject prefab, int poolSize)
     {
         this.prefab = prefab;
-        this.poolSize = poolSize;
+        this.poolSize = poolSize;;
         queue = new Queue<GameObject>();
 
         for (int i = 0; i < this.poolSize; i++)
@@ -31,6 +31,13 @@ public class ObjectPool
 
         queue.Dequeue();
         queue.Enqueue(obj);
+        BombController bomb = obj.GetComponent<BombController>();
+        if (bomb != null)
+        {
+            bomb.SetPowerUp(powerUp);
+            obj = bomb.gameObject;
+        }
+
         obj.SetActive(true);
         return obj;
     }
@@ -38,5 +45,9 @@ public class ObjectPool
     public void ReturnToPool(GameObject obj)
     {
         obj.SetActive(false);
+    }
+    public void SetPowerUp(int powerUp)
+    {
+        this.powerUp = powerUp;
     }
 }

@@ -13,8 +13,12 @@ public class PlayerController : MonoBehaviour
     public Tilemap tilemapParedes;
     public Tilemap tilemapDestrutiveis;
 
+    public Tilemap tilemapItem;
+
     [SerializeField] private GameObject bombPrefab;
     private ObjectPool bombPool;
+
+    private int powerUp = 1;
 
     [SerializeField] private Sprite[] UpSprites;
     [SerializeField] private Sprite[] LeftSprites;
@@ -45,6 +49,7 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        checkItemTike();
         if (!isMoving)
         {
 
@@ -177,6 +182,17 @@ private void AnimateSprite(Sprite[] animationSprites)
 
             bomb.transform.position = tileCenterPosition;
             bomb.SetActive(true);
+        }
+    }
+    private void checkItemTike()
+    {
+        Vector3Int playerPosition = tilemapItem.WorldToCell(transform.position);
+        if (tilemapItem.HasTile(playerPosition))
+        {
+            tilemapItem.SetTile(playerPosition, null);
+            powerUp++;
+            Debug.Log("PowerUp: " + powerUp);
+            bombPool.SetPowerUp(powerUp);
         }
     }
 }

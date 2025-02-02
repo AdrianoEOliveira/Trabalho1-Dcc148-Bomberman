@@ -1,4 +1,5 @@
 using System.Collections;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -19,6 +20,9 @@ public class BombController : MonoBehaviour
     private bool isExploded = false; // Verifica se a bomba já explodiu
     private bool isBombUsed = false; // Controla se a bomba já foi usada
 
+    private int PowerUp = 1; // Verifica se a bomba é um power-up
+
+
     private Vector3 worldPosition; // Posição da bomba no mundo
     private Vector3Int bombPosition;
 
@@ -35,6 +39,12 @@ public class BombController : MonoBehaviour
             InitializeBomb();
         }
     }
+
+    public void SetPowerUp(int powerUp)
+    {
+        PowerUp = powerUp;
+    }
+
     private void InitializeBomb()
     {
         isExploded = false; // A bomba ainda não explodiu
@@ -80,61 +90,74 @@ public class BombController : MonoBehaviour
 
     // Função para lidar com a explosão
     private void Explode()
-    {
-        if (isExploded)
-            return;
+{
+    if (isExploded)
+        return;
 
-        isExploded = true;
+    isExploded = true;
 
-        // Atualiza a posição no Tilemap de destrutíveis para garantir que a bomba está no lugar correto
-        bombPosition = tilemapDestrutiveis.WorldToCell(transform.position);
+    // Atualiza a posição no Tilemap de destrutíveis para garantir que a bomba está no lugar correto
+    bombPosition = tilemapDestrutiveis.WorldToCell(transform.position);
 
-        // Destrói tiles ao redor da bomba (incluindo o tile onde a bomba foi colocada)
-        DestruirTiles();
+    // Destrói tiles ao redor da bomba (incluindo o tile onde a bomba foi colocada)
+    DestruirTiles();
 
-        // Inicia a animação da explosão
-        StartCoroutine(AnimateExplosion());
+    // Inicia a animação da explosão
+    StartCoroutine(AnimateExplosion());
 
-        // Instancia a explosão no local
-        Vector3 worldPosition = tilemapPiso.CellToWorld(bombPosition);
-        Vector3 tileCenterPosition = worldPosition + tilemapPiso.cellSize / 2f;
+    // Instancia a explosão no local
+    Vector3 worldPosition = tilemapPiso.CellToWorld(bombPosition);
+    Vector3 tileCenterPosition = worldPosition + tilemapPiso.cellSize / 2f;
 
-        Instantiate(explosionPrefab, tileCenterPosition, Quaternion.identity);
+    // Instancia a explosão
+    GameObject explosion = Instantiate(explosionPrefab, tileCenterPosition, Quaternion.identity);
 
-        isBombUsed = true;
+    // Ajusta o tamanho da explosão de acordo com o powerUp
+    float explosionScale =  PowerUp * 1f; // Aumenta a escala da explosão conforme o powerUp
+    explosion.transform.localScale = new Vector3(explosionScale, explosionScale, 1);
 
-        // Desativa a bomba após a animação de explosão
-        gameObject.SetActive(false);
-    }
+    isBombUsed = true;
+
+    // Desativa a bomba após a animação de explosão
+    gameObject.SetActive(false);
+}
 
     // Função para destruir tiles ao redor da bomba
-    private void DestruirTiles()
+// Função para destruir tiles ao redor da bomba com base no powerUp
+private void DestruirTiles()
+{
+    // Determina o alcance da explosão com base no powerUp
+    int alcance = PowerUp;  // O valor do powerUp aumenta o alcance
+
+    // Verifica os tiles adjacentes no alcance vertical e horizontal
+    for (int x = -alcance; x <= alcance; x++)
     {
-        // Verifica se o tile onde a bomba foi colocada ainda é destrutível
-        if (tilemapDestrutiveis.HasTile(bombPosition))
+        // Para a direção X (horizontal), ignora a linha do centro (onde a bomba está)
+        if (x != 0)
         {
-            tilemapDestrutiveis.SetTile(bombPosition, null); // Remove o tile onde a bomba foi colocada
-        }
-
-        // Agora, verifica os tiles adjacentes
-        Vector3Int[] adjacenteTiles = new Vector3Int[]
-        {
-        bombPosition + new Vector3Int(1, 0, 0), // Direita
-        bombPosition + new Vector3Int(-1, 0, 0), // Esquerda
-        bombPosition + new Vector3Int(0, 1, 0), // Cima
-        bombPosition + new Vector3Int(0, -1, 0)  // Baixo
-        };
-
-        // Verifica se os tiles adjacentes são destrutíveis e os destrói
-        foreach (var adj in adjacenteTiles)
-        {
-            // Verifica se o tile adjacente é destrutível
-            if (tilemapDestrutiveis.HasTile(adj))
+            Vector3Int tilePosition = bombPosition + new Vector3Int(x, 0, 0);
+            // Verifica se o tile é destrutível
+            if (tilemapDestrutiveis.HasTile(tilePosition))
             {
-                tilemapDestrutiveis.SetTile(adj, null); // Remove o tile destrutível
+                tilemapDestrutiveis.SetTile(tilePosition, null); // Remove o tile destrutível
             }
         }
     }
+
+    for (int y = -alcance; y <= alcance; y++)
+    {
+        // Para a direção Y (vertical), ignora a coluna do centro (onde a bomba está)
+        if (y != 0)
+        {
+            Vector3Int tilePosition = bombPosition + new Vector3Int(0, y, 0);
+            // Verifica se o tile é destrutível
+            if (tilemapDestrutiveis.HasTile(tilePosition))
+            {
+                tilemapDestrutiveis.SetTile(tilePosition, null); // Remove o tile destrutível
+            }
+        }
+    }
+}
 
     // Função para animar a bomba enquanto ela espera
     private IEnumerator AnimateBomb()
