@@ -53,7 +53,7 @@ public class AIController : MonoBehaviour
     {
         CheckItemTile();
         HandleBombPlacement();
-        deathSprites()
+        Death();
 
         if (isDead || isMoving) return;
 
