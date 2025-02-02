@@ -24,7 +24,16 @@ public class BombController : MonoBehaviour
 
     void Start()
     {
+        // Pega o SpriteRenderer
         InitializeBomb();
+    }
+
+    void OnEnable()
+    {
+        if (isBombUsed)
+        {
+            InitializeBomb();
+        }
     }
     private void InitializeBomb()
     {
@@ -44,32 +53,21 @@ public class BombController : MonoBehaviour
         {
             tilemapDestrutiveis = tilemapObj3.GetComponent<Tilemap>();
         }
-        // Pega o SpriteRenderer
 
+        // Pega o SpriteRenderer
+        isExploded = false; // A bomba ainda não explodiu
 
         spriteRenderer = GetComponent<SpriteRenderer>();
 
         // Pega a posição da bomba no Tilemap
         bombPosition = tilemapDestrutiveis.WorldToCell(transform.position);
-
         // Reseta o estado da bomba
-        isExploded = false;
         spriteRenderer.sprite = bombSprites[0]; // Coloca o primeiro sprite da animação da bomba
         gameObject.SetActive(true); // Ativa a bomb
         StartCoroutine(ExplosionCountdown()); // Inicia a contagem regressiva
         StartCoroutine(AnimateBomb()); // Inicia a animação da bomba
     }
 
-    public void ResetBomb()
-    {
-        if (!isBombUsed)
-        {
-            // Se for a primeira vez, não faz reset, apenas retorna
-            isBombUsed = true; // Marca que a bomba foi usada pela primeira vez
-            return;
-        }
-        InitializeBomb(); // Chama o método que faz o comportamento de "Start()" novamente
-    }
 
     // Função de contagem regressiva para a explosão
     private IEnumerator ExplosionCountdown()
@@ -88,23 +86,22 @@ public class BombController : MonoBehaviour
 
         isExploded = true;
 
-        // Destrói tiles ao redor da bomba (se forem destrutíveis)
+        // Atualiza a posição no Tilemap de destrutíveis para garantir que a bomba está no lugar correto
+        bombPosition = tilemapDestrutiveis.WorldToCell(transform.position);
+
+        // Destrói tiles ao redor da bomba (incluindo o tile onde a bomba foi colocada)
         DestruirTiles();
 
         // Inicia a animação da explosão
         StartCoroutine(AnimateExplosion());
 
-        Vector3 worldPosition = transform.position;
+        // Instancia a explosão no local
+        Vector3 worldPosition = tilemapPiso.CellToWorld(bombPosition);
+        Vector3 tileCenterPosition = worldPosition + tilemapPiso.cellSize / 2f;
 
-        // Converte a posição para a célula do Tilemap
-        Vector3Int tilePosition = tilemapPiso.WorldToCell(worldPosition);
-
-        // Calcula a posição no centro do tile
-        Vector3 tileCenterPosition = tilemapPiso.CellToWorld(tilePosition) + tilemapPiso.cellSize / 2f;
-
-        // Posiciona a bomba
         Instantiate(explosionPrefab, tileCenterPosition, Quaternion.identity);
 
+        isBombUsed = true;
 
         // Desativa a bomba após a animação de explosão
         gameObject.SetActive(false);
@@ -113,18 +110,25 @@ public class BombController : MonoBehaviour
     // Função para destruir tiles ao redor da bomba
     private void DestruirTiles()
     {
+        // Verifica se o tile onde a bomba foi colocada ainda é destrutível
+        if (tilemapDestrutiveis.HasTile(bombPosition))
+        {
+            tilemapDestrutiveis.SetTile(bombPosition, null); // Remove o tile onde a bomba foi colocada
+        }
+
+        // Agora, verifica os tiles adjacentes
         Vector3Int[] adjacenteTiles = new Vector3Int[]
         {
-            bombPosition + new Vector3Int(1, 0, 0), // Direita
-            bombPosition + new Vector3Int(-1, 0, 0), // Esquerda
-            bombPosition + new Vector3Int(0, 1, 0), // Cima
-            bombPosition + new Vector3Int(0, -1, 0)  // Baixo
+        bombPosition + new Vector3Int(1, 0, 0), // Direita
+        bombPosition + new Vector3Int(-1, 0, 0), // Esquerda
+        bombPosition + new Vector3Int(0, 1, 0), // Cima
+        bombPosition + new Vector3Int(0, -1, 0)  // Baixo
         };
 
         // Verifica se os tiles adjacentes são destrutíveis e os destrói
         foreach (var adj in adjacenteTiles)
         {
-            // Verifica se o tile não é uma parede ou piso (apenas destrutíveis)
+            // Verifica se o tile adjacente é destrutível
             if (tilemapDestrutiveis.HasTile(adj))
             {
                 tilemapDestrutiveis.SetTile(adj, null); // Remove o tile destrutível
