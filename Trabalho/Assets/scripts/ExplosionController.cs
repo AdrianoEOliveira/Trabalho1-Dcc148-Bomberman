@@ -25,6 +25,8 @@ public class ExplosionController : MonoBehaviour
         }
 
         // Quando a animação termina, desativa o objeto
+        AudioSource audioSource = gameObject.GetComponent<AudioSource>();
+        audioSource.Stop();
         gameObject.SetActive(false);
         Destroy(gameObject);
     }

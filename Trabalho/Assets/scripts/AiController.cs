@@ -32,7 +32,12 @@ public class AIController : MonoBehaviour
 
     [SerializeField] private float destructibleWeight = 2f;
     [SerializeField] private float playerWeight = 1f;
+
+    [SerializeField] private float enemyWeight = 1.5f;
     [SerializeField] private float minBombScore = 1.5f;
+
+    [SerializeField] private GameObject enemy1;
+    [SerializeField] private GameObject enemy2;
 
     private void Awake()
     {
@@ -137,6 +142,15 @@ public class AIController : MonoBehaviour
         {
             float distance = Vector3.Distance(position, player.transform.position);
             score += playerWeight * (1f / Mathf.Max(distance, 0.1f));
+        }
+        GameObject[] enemies = { enemy1, enemy2 };
+        foreach (GameObject enemy in enemies)
+        {
+            if (enemy != null)
+            {
+                float distance = Vector3.Distance(position, enemy.transform.position);
+                score += enemyWeight * (1f / Mathf.Max(distance, 0.1f));
+            }
         }
 
         return score;

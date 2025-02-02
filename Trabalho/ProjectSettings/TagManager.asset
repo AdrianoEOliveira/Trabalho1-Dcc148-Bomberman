@@ -13,6 +13,9 @@ TagManager:
   - 2 player
   - 3 player
   - 4player
+  - Ai1
+  - Ai2
+  - Ai3
   layers:
   - Default
   - TransparentFX

@@ -16,7 +16,12 @@ public class BombController : MonoBehaviour
     public Tilemap tilemapDestrutiveis; // Tilemap para tiles Destrutíveis
 
     public GameObject player; // Referência ao jogador
-    public AIController A1; // Referência ao AI1
+
+    [SerializeField] GameObject A1; // Referência ao AI1
+    
+    [SerializeField] GameObject A2; // Referência ao AI2
+
+    [SerializeField] GameObject A3; // Referência ao AI3
 
 
     public Sprite[] bombSprites; // Array de sprites para animação da bomba (4 sprites)
@@ -28,13 +33,13 @@ public class BombController : MonoBehaviour
 
     public int PowerUp = 1; // Verifica se a bomba é um power-up
 
-
-    private Vector3 worldPosition; // Posição da bomba no mundo
     private Vector3Int bombPosition;
 
     void Start()
     {
-        // Pega o SpriteRenderer
+        A1 = GameObject.FindWithTag("Ai1");
+        A2 = GameObject.FindWithTag("Ai2");
+        A3 = GameObject.FindWithTag("Ai3");
         InitializeBomb();
     }
 
@@ -54,7 +59,7 @@ public class BombController : MonoBehaviour
     private void InitializeBomb()
     {
         isExploded = false; // A bomba ainda não explodiu
-         startTime = Time.time; // Registrar o tempo de ativação
+        startTime = Time.time; // Registrar o tempo de ativação
         GameObject tilemapObj = GameObject.FindWithTag("Piso");
         if (tilemapObj != null)
         {
@@ -71,8 +76,6 @@ public class BombController : MonoBehaviour
             tilemapDestrutiveis = tilemapObj3.GetComponent<Tilemap>();
         }
 
-        // Pega o SpriteRenderer
-        isExploded = false; // A bomba ainda não explodiu
 
         spriteRenderer = GetComponent<SpriteRenderer>();
 
@@ -86,11 +89,11 @@ public class BombController : MonoBehaviour
     }
 
     public float GetRemainingTime()
-{
-    // Calcula o tempo restante baseado no tempo decorrido desde a ativação
-    float elapsedTime = Time.time - startTime;
-    return Mathf.Max(fuseTime - elapsedTime, 0f);
-}
+    {
+        // Calcula o tempo restante baseado no tempo decorrido desde a ativação
+        float elapsedTime = Time.time - startTime;
+        return Mathf.Max(fuseTime - elapsedTime, 0f);
+    }
 
 
     // Função de contagem regressiva para a explosão
@@ -117,7 +120,6 @@ public class BombController : MonoBehaviour
         DestruirTiles();
 
         // Inicia a animação da explosão
-        StartCoroutine(AnimateExplosion());
 
         // Instancia a explosão no local
         Vector3 worldPosition = tilemapPiso.CellToWorld(bombPosition);
@@ -129,11 +131,12 @@ public class BombController : MonoBehaviour
         // Ajusta o tamanho da explosão de acordo com o powerUp
         float explosionScale = PowerUp * 1f; // Aumenta a escala da explosão conforme o powerUp
         explosion.transform.localScale = new Vector3(explosionScale, explosionScale, 1);
-        ControleMorte();
 
         isBombUsed = true;
-
+        AudioSource audioSource = gameObject.GetComponent<AudioSource>();
+        audioSource.Stop();
         // Desativa a bomba após a animação de explosão
+        ControleDaMorte();
         gameObject.SetActive(false);
     }
 
@@ -191,20 +194,8 @@ public class BombController : MonoBehaviour
 
     }
 
-    // Função para animar a explosão com 8 sprites
-    private IEnumerator AnimateExplosion()
-    {
-        int spriteCount = explosionSprites.Length; // Total de sprites da explosão
-        float spriteDuration = 3f / spriteCount; // Tempo de duração para cada sprite (0.375 segundos)
 
-        for (int i = 0; i < spriteCount; i++)
-        {
-            spriteRenderer.sprite = explosionSprites[i]; // Altera o sprite da explosão
-            yield return new WaitForSeconds(spriteDuration); // Aguarda antes de trocar o sprite
-        }
-    }
-
-    private void ControleMorte()
+    private void ControleDaMorte()
     {
         // Calcula o alcance da explosão com base no PowerUp
         int alcance = PowerUp;
@@ -218,10 +209,29 @@ public class BombController : MonoBehaviour
             MatarJogador(player);
         }
 
-        // Verifica se o AI1 está dentro do raio da explosão (em X e Y)
-        if (VerificarDentroRaio(explosaoPosicao, A1.transform.position, alcance))
+        if(A1 != null)
         {
-            MatarAI(A1);
+            // Verifica se o AI1 está dentro do raio da explosão (em X e Y)
+            if (VerificarDentroRaio(explosaoPosicao, A1.transform.position, alcance))
+            {
+                MatarAI(A1);
+            }
+        }
+        if (A2 != null)
+        {
+            // Verifica se o AI2 está dentro do raio da explosão (em X e Y)
+            if (VerificarDentroRaio(explosaoPosicao, A2.transform.position, alcance))
+            {
+                MatarAI(A2);
+            }
+        }
+        if (A3 != null)
+        {
+            // Verifica se o AI3 está dentro do raio da explosão (em X e Y)
+            if (VerificarDentroRaio(explosaoPosicao, A3.transform.position, alcance))
+            {
+                MatarAI(A3);
+            }
         }
     }
 
@@ -255,11 +265,10 @@ public class BombController : MonoBehaviour
         //jogador.SetActive(false); // Desativa o jogador (ou adicione animação de morte)
     }
 
-    private void MatarAI(AIController ai)
+    private void MatarAI(GameObject ai)
     {
         // Ação para matar o AI, como desativá-lo ou chamar animação de morte
-        Debug.Log("AI1 morreu!");
-        ai.SetDeath(true);
+        ai.GetComponent<AIController>().SetDeath(true);
         //ai.SetActive(false); // Desativa o AI (ou adicione animação de morte)
     }
 }
