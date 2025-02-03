@@ -8,11 +8,11 @@ public class ObjectPool
 
     private Queue<GameObject> queue;
     private int poolSize;
-    private int powerUp =1 ;
+    private int powerUp = 1;
     public ObjectPool(GameObject prefab, int poolSize)
     {
         this.prefab = prefab;
-        this.poolSize = poolSize;;
+        this.poolSize = poolSize; ;
         queue = new Queue<GameObject>();
 
         for (int i = 0; i < this.poolSize; i++)
@@ -50,4 +50,17 @@ public class ObjectPool
     {
         this.powerUp = powerUp;
     }
+public int GetActiveCount()
+{
+    int activeCount = 0;
+    foreach (GameObject obj in queue)
+    {
+        if (obj.activeSelf)
+        {
+            activeCount++;
+        }
+    }
+    return poolSize - activeCount;
+}
+
 }

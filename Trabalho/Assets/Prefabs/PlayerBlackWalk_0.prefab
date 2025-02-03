@@ -123,12 +123,22 @@ MonoBehaviour:
   - {fileID: -9078394528372511491, guid: 131fd62ecd3e3d24699ac2e4e38ee3b7, type: 3}
   - {fileID: -1174024930709599545, guid: 131fd62ecd3e3d24699ac2e4e38ee3b7, type: 3}
   - {fileID: -3763208851180502378, guid: 131fd62ecd3e3d24699ac2e4e38ee3b7, type: 3}
-  deathSprites: []
+  deathSprites:
+  - {fileID: 1769754006986496279, guid: 399526844e7714b45bcc6061f5e4a2c8, type: 3}
+  - {fileID: -7905520708037107564, guid: 399526844e7714b45bcc6061f5e4a2c8, type: 3}
+  - {fileID: -7760472639406864888, guid: 399526844e7714b45bcc6061f5e4a2c8, type: 3}
+  - {fileID: 7016695799458345149, guid: 399526844e7714b45bcc6061f5e4a2c8, type: 3}
+  - {fileID: 7188888301217167298, guid: 399526844e7714b45bcc6061f5e4a2c8, type: 3}
+  - {fileID: -6936696252016477181, guid: 399526844e7714b45bcc6061f5e4a2c8, type: 3}
+  isDead: 0
   minBombInterval: 3
   maxBombInterval: 4
   destructibleWeight: 2
   playerWeight: 1
+  enemyWeight: 1.5
   minBombScore: 1.5
+  enemy1: {fileID: 0}
+  enemy2: {fileID: 0}
 --- !u!61 &5953094306589167409
 BoxCollider2D:
   m_ObjectHideFlags: 0

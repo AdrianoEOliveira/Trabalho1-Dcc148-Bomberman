@@ -17,16 +17,16 @@ public class MenuPrincipalManager : MonoBehaviour
 
     public void IniciarJogo2()
     {
-        SceneManager.LoadScene("Arena"); // Substitua pelo nome correto da cena do jogo
+        SceneManager.LoadScene("Arena1"); 
     }
 
     public void IniciarJogo3()
     {
-        SceneManager.LoadScene("CenaArena"); // Substitua pelo nome correto da cena do jogo
+        SceneManager.LoadScene("Arena2"); 
     }
 
     public void IniciarJogo4()
     {
-        SceneManager.LoadScene("CenaArena"); // Substitua pelo nome correto da cena do jogo
+        SceneManager.LoadScene("Arena3");
     }
 }

@@ -22,7 +22,7 @@ public class AIController : MonoBehaviour
 
     private Vector3 targetPosition;
     private bool isMoving = false;
-    private bool isDead = false;
+    [SerializeField] public bool isDead = false;
     private int powerUp = 1;
 
     [SerializeField] private float minBombInterval = 2.5f;

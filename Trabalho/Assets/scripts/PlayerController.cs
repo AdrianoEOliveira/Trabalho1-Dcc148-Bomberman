@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
 using System.Collections;
+using TMPro;
 
 public class PlayerController : MonoBehaviour
 {
@@ -28,11 +29,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Sprite[] deathSprites;
     private SpriteRenderer spriteRenderer;
 
+    [SerializeField] private TMP_Text textMesh;
+
     private int currentSpriteIndex = 0;
 
     private bool isMoving = false;
 
-    private bool isDead = false;
+    public bool isDead = false;
 
     private void Awake()
     {
@@ -54,12 +57,18 @@ public class PlayerController : MonoBehaviour
         isDead = death;
     }
 
+    public void AtualizaHUD()
+    {
+        textMesh.text = "X " + bombPool.GetActiveCount();
+    }
+
 
 
     private void Update()
     {
         checkItemTike();
         Death();
+        AtualizaHUD();
         if (!isMoving)
         {
 
