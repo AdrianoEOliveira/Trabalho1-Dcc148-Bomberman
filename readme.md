@@ -1,3 +1,7 @@
+
+# Nome : Adriano Eiterer Oliveira 
+# Matricula: 201865118C
+
 # Trabalho 1 de Desenvolvimento de Jogos - Jogo Bomberman
 
 ## Descrição
