@@ -102,7 +102,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 2
-  bombPrefab: {fileID: 0}
+  bombPrefab: {fileID: 946088701492085908, guid: 1967465c8f111eb4e9af9ed4838fedb6, type: 3}
   UpSprites:
   - {fileID: -709575133154121010, guid: 131fd62ecd3e3d24699ac2e4e38ee3b7, type: 3}
   - {fileID: -537476504602637214, guid: 131fd62ecd3e3d24699ac2e4e38ee3b7, type: 3}
@@ -137,6 +137,7 @@ MonoBehaviour:
   playerWeight: 1
   enemyWeight: 1.5
   minBombScore: 1.5
+  maxSafeMoves: 100
   enemy1: {fileID: 0}
   enemy2: {fileID: 0}
 --- !u!61 &5953094306589167409

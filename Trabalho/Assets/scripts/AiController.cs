@@ -39,9 +39,6 @@ public class AIController : MonoBehaviour
     [SerializeField] private float enemyWeight = 1.5f;
     [SerializeField] private float minBombScore = 1.5f;
 
-    [SerializeField] private int maxSafeMoves = 100;  // Máximo de movimentos seguros
-    private int safeMoveCount = 0;  // Contador de movimentos seguros
-
     [SerializeField] private GameObject enemy1;
     [SerializeField] private GameObject enemy2;
 
@@ -65,7 +62,7 @@ public class AIController : MonoBehaviour
         CheckItemTile();
         HandleBombPlacement();
         Death();
-        if (isDead || isMoving || safeMoveCount >= maxSafeMoves) return;
+        if (isDead || isMoving) return;
 
         Vector3Int currentCell = tilemapPiso.WorldToCell(transform.position);
         List<Vector3Int> possibleMoves = GetPossibleMoves(currentCell);
@@ -77,7 +74,6 @@ public class AIController : MonoBehaviour
             {
                 targetPosition = tilemapPiso.GetCellCenterWorld(safestMove);
                 StartCoroutine(MoveToTarget());
-                safeMoveCount++;  // Incrementa o contador de movimentos seguros
             }
         }
     }
@@ -204,12 +200,12 @@ public class AIController : MonoBehaviour
                 escapeRoutes++;
                 if (escapeRoutes >= 1)
                 {
-                    return true; // Pelo menos 2 caminhos livres, pode colocar a bomba
+                    return true;
                 }
             }
         }
 
-        return false; // Menos de 2 caminhos livres, não coloca a bomba
+        return false;
     }
 
 
@@ -278,61 +274,49 @@ public class AIController : MonoBehaviour
         return false;
     }
 
- private Vector3Int FindSafestMove(List<Vector3Int> possibleMoves)
-{
-    if (possibleMoves.Count == 0)
-        return tilemapPiso.WorldToCell(transform.position);
-
-    Vector3Int currentCell = tilemapPiso.WorldToCell(transform.position);
-    possibleMoves.Add(currentCell);
-
-    float maxSafety = float.MinValue;
-    List<Vector3Int> equallySafeMoves = new List<Vector3Int>();
-
-    // Verifica a segurança e coleta movimentos igualmente seguros
-    foreach (Vector3Int move in possibleMoves)
+    private Vector3Int FindSafestMove(List<Vector3Int> possibleMoves)
     {
-        Vector3 movePos = tilemapPiso.GetCellCenterWorld(move);
-        float safetyScore = CalculateSafety(movePos);
+        if (possibleMoves.Count == 0)
+            return tilemapPiso.WorldToCell(transform.position);
 
-        // Se encontrar um movimento mais seguro, reinicia a lista
-        if (safetyScore > maxSafety)
+        Vector3Int currentCell = tilemapPiso.WorldToCell(transform.position);
+        possibleMoves.Add(currentCell);
+
+        float maxSafety = float.MinValue;
+        List<Vector3Int> equallySafeMoves = new List<Vector3Int>();
+
+        // Verifica a segurança e coleta movimentos igualmente seguros
+        foreach (Vector3Int move in possibleMoves)
         {
-            maxSafety = safetyScore;
-            equallySafeMoves.Clear();
-            equallySafeMoves.Add(move);
+            Vector3 movePos = tilemapPiso.GetCellCenterWorld(move);
+            float safetyScore = CalculateSafety(movePos);
+
+            // Se encontrar um movimento mais seguro, reinicia a lista
+            if (safetyScore > maxSafety)
+            {
+                maxSafety = safetyScore;
+                equallySafeMoves.Clear();
+                equallySafeMoves.Add(move);
+            }
+            // Se a segurança for a mesma, adiciona à lista de opções seguras
+            else if (safetyScore == maxSafety)
+            {
+                equallySafeMoves.Add(move);
+            }
         }
-        // Se a segurança for a mesma, adiciona à lista de opções seguras
-        else if (safetyScore == maxSafety)
+
+        // Se algum movimento seguro já for muito próximo (por exemplo, a uma distância pequena), ignora os outros
+        if (equallySafeMoves.Count > 0)
         {
-            equallySafeMoves.Add(move);
+            equallySafeMoves.Sort((a, b) => Vector3.Distance(tilemapPiso.GetCellCenterWorld(a), transform.position)
+                                                    .CompareTo(Vector3.Distance(tilemapPiso.GetCellCenterWorld(b), transform.position)));
+            return equallySafeMoves[0];  // Retorna o mais seguro e mais próximo
         }
+
+
+        // Caso não haja movimentos seguros, retornar o mais próximo entre os possíveis
+        return possibleMoves.OrderBy(move => Vector3.Distance(tilemapPiso.GetCellCenterWorld(move), transform.position)).First();
     }
-
-    // Se algum movimento seguro já for muito próximo (por exemplo, a uma distância pequena), ignora os outros
-    if (equallySafeMoves.Count > 0)
-    {
-        Vector3Int closestSafeMove = equallySafeMoves[0];
-        float closestDistance = Vector3.Distance(tilemapPiso.GetCellCenterWorld(closestSafeMove), transform.position);
-        
-        // Defina um limite de proximidade (ajuste o valor conforme necessário)
-        float proximityThreshold = 1.0f;  // Distância limite para considerar um movimento como "muito próximo"
-
-        if (closestDistance <= proximityThreshold)
-        {
-            return closestSafeMove;
-        }
-
-        // Se não houver um movimento suficientemente próximo, ordena os movimentos seguros pela proximidade
-        equallySafeMoves.Sort((a, b) => Vector3.Distance(tilemapPiso.GetCellCenterWorld(a), transform.position)
-                                            .CompareTo(Vector3.Distance(tilemapPiso.GetCellCenterWorld(b), transform.position)));
-        
-        return equallySafeMoves[0];  // Retorna o mais seguro e mais próximo
-    }
-
-    // Caso não haja movimentos seguros, retornar o mais próximo entre os possíveis
-    return possibleMoves.OrderBy(move => Vector3.Distance(tilemapPiso.GetCellCenterWorld(move), transform.position)).First();
-}
 
     private float CalculateSafety(Vector3 position)
     {
