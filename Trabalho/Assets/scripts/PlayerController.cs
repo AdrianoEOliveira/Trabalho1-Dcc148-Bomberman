@@ -66,7 +66,7 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        checkItemTike();
+        CheckItemTile();
         Death();
         AtualizaHUD();
         if (!isMoving)
@@ -207,7 +207,7 @@ public class PlayerController : MonoBehaviour
             bomb.SetActive(true);
         }
     }
-    private void checkItemTike()
+    private void CheckItemTile()
     {
         Vector3Int playerPosition = tilemapItem.WorldToCell(transform.position);
         if (tilemapItem.HasTile(playerPosition))

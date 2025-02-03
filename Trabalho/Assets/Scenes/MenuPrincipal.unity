@@ -132,7 +132,7 @@ GameObject:
   - component: {fileID: 286479145}
   - component: {fileID: 286479144}
   m_Layer: 5
-  m_Name: Play 2 Player
+  m_Name: 1Inimigo
   m_TagString: 2 player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -297,7 +297,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Play 2 players
+  m_text: Contra 1 Inimigo
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -433,7 +433,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Play 4 players
+  m_text: Contra 3 Inimigos
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -692,7 +692,7 @@ GameObject:
   - component: {fileID: 1193901258}
   - component: {fileID: 1193901257}
   m_Layer: 5
-  m_Name: Play4 Players
+  m_Name: 3Inimigos
   m_TagString: 4player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -813,7 +813,7 @@ GameObject:
   - component: {fileID: 1519639424}
   - component: {fileID: 1519639423}
   m_Layer: 5
-  m_Name: Play 3 Players
+  m_Name: 2Inimigos
   m_TagString: 3 player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -973,9 +973,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5590015e4dea286429065eeef63478ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  botao2Players: {fileID: 286479144}
-  botao3Players: {fileID: 1519639423}
-  botao4Players: {fileID: 1193901257}
+  botao1Players: {fileID: 286479144}
+  botao2Players: {fileID: 1519639423}
+  botao3Players: {fileID: 1193901257}
 --- !u!82 &1622786045
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1130,7 +1130,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Play 3 players
+  m_text: Contra 2 Inimigos
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
