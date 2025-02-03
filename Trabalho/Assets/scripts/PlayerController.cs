@@ -64,53 +64,59 @@ public class PlayerController : MonoBehaviour
 
 
 
-    private void Update()
+private void Update()
+{
+    CheckItemTile();
+    Death();
+    AtualizaHUD();
+
+    if (!isMoving)
     {
-        CheckItemTile();
-        Death();
-        AtualizaHUD();
-        if (!isMoving)
+        // Checa o input de movimento, permitindo que o botão fique pressionado
+        if (Keyboard.current.upArrowKey.isPressed || Keyboard.current.wKey.isPressed)
         {
-
-            if (Keyboard.current.upArrowKey.wasPressedThisFrame)
-            {
-                moveInput.y = 1;
-                moveInput.x = 0;
-            }
-            else if (Keyboard.current.downArrowKey.isPressed)
-            {
-                moveInput.y = -1;
-                moveInput.x = 0;
-            }
-            if (Keyboard.current.leftArrowKey.isPressed)
-            {
-                moveInput.x = -1;
-                moveInput.y = 0;
-            }
-            else if (Keyboard.current.rightArrowKey.isPressed)
-            {
-                moveInput.x = 1;
-                moveInput.y = 0;
-            }
-            if (moveInput != Vector2.zero)
-            {
-                // Converte a posição atual para a célula do tilemap
-                Vector3Int nextCell = tilemapPiso.WorldToCell(transform.position) + GetCellDirection(moveInput);
-                Vector3 nextPosition = tilemapPiso.GetCellCenterWorld(nextCell);
-
-                if (!IsObstacle(nextPosition))
-                {
-                    targetPosition = nextPosition;
-                    StartCoroutine(MoveToTarget());
-                }
-            }
+            moveInput.y = 1;
+            moveInput.x = 0;
+        }
+        else if (Keyboard.current.downArrowKey.isPressed || Keyboard.current.sKey.isPressed)
+        {
+            moveInput.y = -1;
+            moveInput.x = 0;
+        }
+        else if (Keyboard.current.leftArrowKey.isPressed || Keyboard.current.aKey.isPressed)
+        {
+            moveInput.x = -1;
+            moveInput.y = 0;
+        }
+        else if (Keyboard.current.rightArrowKey.isPressed || Keyboard.current.dKey.isPressed)
+        {
+            moveInput.x = 1;
+            moveInput.y = 0;
         }
 
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        // Se algum movimento foi registrado, tenta mover o personagem
+        if (moveInput != Vector2.zero)
         {
-            Bomb();
+            // Converte a posição atual para a célula do tilemap
+            Vector3Int nextCell = tilemapPiso.WorldToCell(transform.position) + GetCellDirection(moveInput);
+            Vector3 nextPosition = tilemapPiso.GetCellCenterWorld(nextCell);
+
+            // Verifica se o próximo movimento não colide com obstáculos
+            if (!IsObstacle(nextPosition))
+            {
+                targetPosition = nextPosition;
+                StartCoroutine(MoveToTarget());
+            }
         }
     }
+
+    // Checa se a tecla de espaço foi pressionada para acionar a bomba
+    if (Keyboard.current.spaceKey.wasPressedThisFrame)
+    {
+        Bomb();
+    }
+}
+
 
     private System.Collections.IEnumerator MoveToTarget()
     {

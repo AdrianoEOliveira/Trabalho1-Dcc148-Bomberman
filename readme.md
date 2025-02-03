@@ -18,7 +18,21 @@ Este projeto é uma implementação do jogo **Bomberman** no Unity. O objetivo d
 
 ## Como Jogar
 
-1. **Movimento**: Use as teclas **W**, **A**, **S**, **D** ou as setas direcionais para mover o personagem.
+## Controles de Movimento
+
+O personagem pode ser movido usando as teclas de direção:
+
+- **W** para cima
+- **A** para esquerda
+- **S** para baixo
+- **D** para direita
+
+Ou, alternativamente, pode-se usar as **setas direcionais**:
+
+- **Seta para cima** para mover para cima
+- **Seta para baixo** para mover para baixo
+- **Seta para a esquerda** para mover para a esquerda
+- **Seta para a direita** para mover para a direita
 2. **Colocar Bombas**: Pressione a tecla **Espaço** para colocar uma bomba.
 3. **Objetivo**: Derrote inimigos e destrua obstáculos para completar os níveis.
 4. **Vencer**: Elimine todos os inimigos.
@@ -46,6 +60,8 @@ https://mixkit.co/free-sound-effects/bomb/
 https://pixabay.com/pt/sound-effects/search/vela/
 https://opengameart.org/content/victory
 https://opengameart.org/content/game-over-8bit-music
+
+
 
 
 

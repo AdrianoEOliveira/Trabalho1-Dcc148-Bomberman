@@ -248,6 +248,10 @@ public class BombController : MonoBehaviour
         // Verifica se está na diagonal
         bool naDiagonal = Mathf.Abs(explosaoTilePos.x - targetTilePos.x) == Mathf.Abs(explosaoTilePos.y - targetTilePos.y);
 
+        if(explosaoTilePos == targetTilePos)
+        {
+            return true;
+        }
         // Se estiver na diagonal, retorna false para que não morra
         if (naDiagonal)
         {

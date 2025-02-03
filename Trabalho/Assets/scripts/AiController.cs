@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework.Constraints;
+using System.Linq;
+using Unity.VisualScripting;
 
 public class AIController : MonoBehaviour
 {
@@ -36,6 +39,9 @@ public class AIController : MonoBehaviour
     [SerializeField] private float enemyWeight = 1.5f;
     [SerializeField] private float minBombScore = 1.5f;
 
+    [SerializeField] private int maxSafeMoves = 100;  // Máximo de movimentos seguros
+    private int safeMoveCount = 0;  // Contador de movimentos seguros
+
     [SerializeField] private GameObject enemy1;
     [SerializeField] private GameObject enemy2;
 
@@ -59,8 +65,7 @@ public class AIController : MonoBehaviour
         CheckItemTile();
         HandleBombPlacement();
         Death();
-
-        if (isDead || isMoving) return;
+        if (isDead || isMoving || safeMoveCount >= maxSafeMoves) return;
 
         Vector3Int currentCell = tilemapPiso.WorldToCell(transform.position);
         List<Vector3Int> possibleMoves = GetPossibleMoves(currentCell);
@@ -72,6 +77,7 @@ public class AIController : MonoBehaviour
             {
                 targetPosition = tilemapPiso.GetCellCenterWorld(safestMove);
                 StartCoroutine(MoveToTarget());
+                safeMoveCount++;  // Incrementa o contador de movimentos seguros
             }
         }
     }
@@ -108,7 +114,7 @@ public class AIController : MonoBehaviour
     {
         if (!CanEscapeAfterBombPlacement() || !IsGoodBombPosition(transform.position))
         {
-            return; // Don't place the bomb if it would trap the AI
+            return; // Não coloca a bomba se não puder escapar
         }
 
         GameObject bomb = bombPool.GetFromPool();
@@ -178,35 +184,71 @@ public class AIController : MonoBehaviour
     {
         Vector3Int currentCell = tilemapPiso.WorldToCell(transform.position);
 
-        List<Vector3Int> adjacentCells = new List<Vector3Int>
-        {
-            currentCell + Vector3Int.up,
-            currentCell + Vector3Int.down,
-            currentCell + Vector3Int.left,
-            currentCell + Vector3Int.right
-        };
+        // Apenas direções ortogonais (cima, baixo, esquerda, direita)
+        List<Vector3Int> orthogonalCells = new List<Vector3Int>
+    {
+        currentCell + Vector3Int.up,
+        currentCell + Vector3Int.down,
+        currentCell + Vector3Int.left,
+        currentCell + Vector3Int.right
+    };
 
-        foreach (Vector3Int cell in adjacentCells)
+        int escapeRoutes = 0;
+
+        // Conta quantos caminhos ortogonais estão livres
+        foreach (Vector3Int cell in orthogonalCells)
         {
             Vector3 worldPos = tilemapPiso.GetCellCenterWorld(cell);
             if (!IsObstacle(worldPos))
             {
-                return true; // At least one escape route is available
+                escapeRoutes++;
+                if (escapeRoutes >= 1)
+                {
+                    return true; // Pelo menos 2 caminhos livres, pode colocar a bomba
+                }
             }
         }
 
-        return false; // No escape routes available
+        return false; // Menos de 2 caminhos livres, não coloca a bomba
     }
 
 
     private List<Vector3Int> GetPossibleMoves(Vector3Int currentCell)
     {
         List<Vector3Int> moves = new List<Vector3Int>();
-        CheckMove(moves, currentCell + Vector3Int.up);
-        CheckMove(moves, currentCell + Vector3Int.down);
-        CheckMove(moves, currentCell + Vector3Int.left);
-        CheckMove(moves, currentCell + Vector3Int.right);
+
+        // 🔹 Depois verifica os movimentos individuais
+        AddMoveIfValid(moves, currentCell + Vector3Int.left);  // Left
+        AddMoveIfValid(moves, currentCell + Vector3Int.up);    // Up
+        AddMoveIfValid(moves, currentCell + Vector3Int.down);  // Down
+        AddMoveIfValid(moves, currentCell + Vector3Int.right); // Right
+
+        // 🔹 Verifica as diagonais se o primeiro for disponivel
+        if (moves.Contains(currentCell + Vector3Int.left))
+        {
+            AddMoveIfValid(moves, currentCell + Vector3Int.left * 2);
+        }
+        if (moves.Contains(currentCell + Vector3Int.up))
+        {
+            AddMoveIfValid(moves, currentCell + Vector3Int.up * 2);
+        }
+        if (moves.Contains(currentCell + Vector3Int.right))
+        {
+            AddMoveIfValid(moves, currentCell + Vector3Int.right * 2);
+        }
+        if (moves.Contains(currentCell + Vector3Int.down))
+        {
+            AddMoveIfValid(moves, currentCell + Vector3Int.down * 2);
+        }
         return moves;
+    }
+    private void AddMoveIfValid(List<Vector3Int> moves, Vector3Int cell)
+    {
+        Vector3 worldPos = tilemapPiso.GetCellCenterWorld(cell);
+        if (!IsObstacle(worldPos)) // Só adiciona se não for parede ou bloco destrutível
+        {
+            moves.Add(cell);
+        }
     }
 
     private void CheckMove(List<Vector3Int> moves, Vector3Int cell)
@@ -236,42 +278,61 @@ public class AIController : MonoBehaviour
         return false;
     }
 
-    private Vector3Int FindSafestMove(List<Vector3Int> possibleMoves)
+ private Vector3Int FindSafestMove(List<Vector3Int> possibleMoves)
+{
+    if (possibleMoves.Count == 0)
+        return tilemapPiso.WorldToCell(transform.position);
+
+    Vector3Int currentCell = tilemapPiso.WorldToCell(transform.position);
+    possibleMoves.Add(currentCell);
+
+    float maxSafety = float.MinValue;
+    List<Vector3Int> equallySafeMoves = new List<Vector3Int>();
+
+    // Verifica a segurança e coleta movimentos igualmente seguros
+    foreach (Vector3Int move in possibleMoves)
     {
-        if (possibleMoves.Count == 0)
-            return tilemapPiso.WorldToCell(transform.position);
+        Vector3 movePos = tilemapPiso.GetCellCenterWorld(move);
+        float safetyScore = CalculateSafety(movePos);
 
-        // 30% de chance de movimento completamente aleatório
-        if (Random.value < 0.3f)
+        // Se encontrar um movimento mais seguro, reinicia a lista
+        if (safetyScore > maxSafety)
         {
-            return possibleMoves[Random.Range(0, possibleMoves.Count)];
+            maxSafety = safetyScore;
+            equallySafeMoves.Clear();
+            equallySafeMoves.Add(move);
         }
-        else // 70% de chance de usar a lógica de segurança
+        // Se a segurança for a mesma, adiciona à lista de opções seguras
+        else if (safetyScore == maxSafety)
         {
-            float maxSafety = float.MinValue;
-            List<Vector3Int> equallySafeMoves = new List<Vector3Int>();
-
-            foreach (Vector3Int move in possibleMoves)
-            {
-                Vector3 movePos = tilemapPiso.GetCellCenterWorld(move);
-                float safetyScore = CalculateSafety(movePos);
-
-                if (safetyScore > maxSafety)
-                {
-                    maxSafety = safetyScore;
-                    equallySafeMoves.Clear();
-                    equallySafeMoves.Add(move);
-                }
-                else if (safetyScore == maxSafety)
-                {
-                    equallySafeMoves.Add(move);
-                }
-            }
-
-            // Escolhe aleatoriamente entre os movimentos igualmente seguros
-            return equallySafeMoves[Random.Range(0, equallySafeMoves.Count)];
+            equallySafeMoves.Add(move);
         }
     }
+
+    // Se algum movimento seguro já for muito próximo (por exemplo, a uma distância pequena), ignora os outros
+    if (equallySafeMoves.Count > 0)
+    {
+        Vector3Int closestSafeMove = equallySafeMoves[0];
+        float closestDistance = Vector3.Distance(tilemapPiso.GetCellCenterWorld(closestSafeMove), transform.position);
+        
+        // Defina um limite de proximidade (ajuste o valor conforme necessário)
+        float proximityThreshold = 1.0f;  // Distância limite para considerar um movimento como "muito próximo"
+
+        if (closestDistance <= proximityThreshold)
+        {
+            return closestSafeMove;
+        }
+
+        // Se não houver um movimento suficientemente próximo, ordena os movimentos seguros pela proximidade
+        equallySafeMoves.Sort((a, b) => Vector3.Distance(tilemapPiso.GetCellCenterWorld(a), transform.position)
+                                            .CompareTo(Vector3.Distance(tilemapPiso.GetCellCenterWorld(b), transform.position)));
+        
+        return equallySafeMoves[0];  // Retorna o mais seguro e mais próximo
+    }
+
+    // Caso não haja movimentos seguros, retornar o mais próximo entre os possíveis
+    return possibleMoves.OrderBy(move => Vector3.Distance(tilemapPiso.GetCellCenterWorld(move), transform.position)).First();
+}
 
     private float CalculateSafety(Vector3 position)
     {
@@ -296,16 +357,33 @@ public class AIController : MonoBehaviour
 
     private bool IsPositionInBombExplosion(Vector3 position, BombController bomb)
     {
-        Vector3Int bombCell = tilemapPiso.WorldToCell(bomb.transform.position);
-        Vector3Int posCell = tilemapPiso.WorldToCell(position);
+        return VerificarDentroRaio(bomb.transform.position, position, powerUp);
+    }
+    private bool VerificarDentroRaio(Vector3 explosaoPosicao, Vector3 targetPos, int alcance)
+    {
+        // Converte as posições para coordenadas de tile
+        Vector3Int explosaoTilePos = tilemapPiso.WorldToCell(explosaoPosicao);
+        Vector3Int targetTilePos = tilemapPiso.WorldToCell(targetPos);
 
-        int dx = Mathf.Abs(posCell.x - bombCell.x);
-        int dy = Mathf.Abs(posCell.y - bombCell.y);
+        // Verifica se o alvo está dentro do alcance em X e Y (não diagonal)
+        bool dentroRaio = Mathf.Abs(explosaoTilePos.x - targetTilePos.x) <= alcance &&
+                          Mathf.Abs(explosaoTilePos.y - targetTilePos.y) <= alcance;
 
-        bool inXAxis = (posCell.y == bombCell.y) && (dx <= bomb.PowerUp);
-        bool inYAxis = (posCell.x == bombCell.x) && (dy <= bomb.PowerUp);
+        if (explosaoPosicao == targetPos)
+        {
+            return true;
+        }
 
-        return inXAxis || inYAxis;
+        // Verifica se está na diagonal
+        bool naDiagonal = Mathf.Abs(explosaoTilePos.x - targetTilePos.x) == Mathf.Abs(explosaoTilePos.y - targetTilePos.y);
+
+        // Se estiver na diagonal, retorna false para que não morra
+        if (naDiagonal)
+        {
+            return false;
+        }
+
+        return dentroRaio;
     }
 
     private IEnumerator MoveToTarget()
@@ -352,7 +430,7 @@ public class AIController : MonoBehaviour
         if (death) StartCoroutine(PlayDeathAnimation());
     }
 
-    private  IEnumerator PlayDeathAnimation()
+    private IEnumerator PlayDeathAnimation()
     {
         int spriteCount = deathSprites.Length;  // Total de sprites para a animação de morte
         float spriteDuration = 0.1f;  // Ajuste o tempo entre os frames da animação
@@ -366,9 +444,9 @@ public class AIController : MonoBehaviour
     }
     private void Death()
     {
-        if(isDead)
+        if (isDead)
         {
-        StartCoroutine(PlayDeathAnimation());
+            StartCoroutine(PlayDeathAnimation());
         }
 
         //gameObject.SetActive(false);
