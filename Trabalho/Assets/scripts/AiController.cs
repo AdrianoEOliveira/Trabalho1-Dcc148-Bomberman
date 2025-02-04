@@ -50,6 +50,29 @@ public class AIController : MonoBehaviour
         tilemapItem = GameObject.FindWithTag("Item")?.GetComponent<Tilemap>();
         spriteRenderer = GetComponent<SpriteRenderer>();
 
+        string[] tags = { "Ai1", "Ai2", "Ai3" };
+
+        // Lista para armazenar os inimigos
+        List<GameObject> enemies = new List<GameObject>();
+
+        // Encontrar os inimigos excluindo a própria tag
+        foreach (string tag in tags)
+        {
+            if (gameObject.tag != tag)
+            {
+                GameObject enemy = GameObject.FindWithTag(tag);
+                if (enemy != null)
+                    enemies.Add(enemy);
+            }
+        }
+
+        // Garantir que os inimigos sejam atribuídos corretamente
+        if (enemies.Count >= 2)
+        {
+            enemy1 = enemies[0];
+            enemy2 = enemies[1];
+        }
+
         bombPool = new ObjectPool(bombPrefab, 3); // Inicializa o pool com 3 bombas
 
         Vector3Int initialCell = tilemapPiso.WorldToCell(transform.position);

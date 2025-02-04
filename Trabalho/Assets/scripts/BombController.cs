@@ -15,7 +15,7 @@ public class BombController : MonoBehaviour
     public Tilemap tilemapParedes; // Tilemap para as Paredes
     public Tilemap tilemapDestrutiveis; // Tilemap para tiles Destrutíveis
 
-    public GameObject player; // Referência ao jogador
+    [SerializeField] public GameObject player; // Referência ao jogador
 
     [SerializeField] GameObject A1; // Referência ao AI1
     
@@ -40,6 +40,7 @@ public class BombController : MonoBehaviour
         A1 = GameObject.FindWithTag("Ai1");
         A2 = GameObject.FindWithTag("Ai2");
         A3 = GameObject.FindWithTag("Ai3");
+        player = GameObject.FindWithTag("Player");
         InitializeBomb();
     }
 
