@@ -65,9 +65,11 @@ public class AIController : MonoBehaviour
                     enemies.Add(enemy);
             }
         }
-
-        // Garantir que os inimigos sejam atribuídos corretamente
-        if (enemies.Count >= 2)
+        if(enemies.Count == 1)
+        {
+            enemy1 = enemies[0];
+        }
+        if (enemies.Count == 2)
         {
             enemy1 = enemies[0];
             enemy2 = enemies[1];
